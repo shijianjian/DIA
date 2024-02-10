@@ -201,6 +201,8 @@ def _get_features(P, model, loader, interp=False, imagenet=False, simclr_aug=Non
             # compute augmented features
             with torch.no_grad():
                 kwargs = {layer: True for layer in layers}  # only forward selected layers
+                if P.model.endswith("simsiam"):
+                    kwargs.update({"projector": True, "penultimate": True})
                 _, output_aux = model(x_t, **kwargs)
 
             # add features in one batch

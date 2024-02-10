@@ -152,7 +152,10 @@ def compute_ood_score(P, model, ood_score, x, simclr_aug=None):
     model.eval()
 
     if ood_score == 'clean_norm':
-        _, output_aux = model(x, penultimate=True, simclr=True)
+        if P.model.endswith("simsiam"):
+            _, output_aux = model(x, penultimate=True, simclr=True, projector=True)
+        else:
+            _, output_aux = model(x, penultimate=True, simclr=True)
         score = output_aux[P.ood_layer].norm(dim=1)
         return score
 
@@ -175,10 +178,25 @@ def compute_ood_score(P, model, ood_score, x, simclr_aug=None):
 
     elif ood_score == 'baseline_marginalized':
 
+        if not (P.shift_trans_type.endswith('cutperm') or P.shift_trans_type.endswith('rotation')):
+            print(P.shift_trans_type, "is not suitable for `baseline_marginalized`.")
+
+        # Only works for rotation
         total_outputs = 0
         for i in range(4):
-            x_rot = torch.rot90(x, i, (2, 3))
-            outputs, outputs_aux = model(x_rot, penultimate=True, joint=True)
+            if P.shift_trans_type.endswith('cutperm'):
+                _, _, H, W = x.size()
+                h_mid, w_mid = int(H / 2), int(W / 2)
+                jigsaw_h, jigsaw_v = i // 2, i % 2
+
+                if jigsaw_h == 1:
+                    x_shift = torch.cat((x[:, :, h_mid:, :], x[:, :, 0:h_mid, :]), dim=2)
+                if jigsaw_v == 1:
+                    x_shift = torch.cat((x[:, :, :, w_mid:], x[:, :, :, 0:w_mid]), dim=3)
+
+            elif P.shift_trans_type.endswith('rotation'):
+                x_shift = torch.rot90(x, i, (2, 3))
+            outputs, outputs_aux = model(x_shift, penultimate=True, joint=True)
             total_outputs += outputs_aux['joint'][:, P.n_classes * i:P.n_classes * (i + 1)]
 
         scores = F.softmax(total_outputs / 4., dim=1).max(dim=1)[0]

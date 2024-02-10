@@ -13,19 +13,13 @@ def parse_args(default=False):
 def _parse_args(default=False):
     """Command-line argument parser for training."""
 
-    parser = ArgumentParser(description='Pytorch implementation of DIA.')
+    parser = ArgumentParser(description='Pytorch implementation of CSI')
 
     parser.add_argument('--dataset', help='Dataset',
-                        choices=[
-                            'cifar10', 'cifar100', "pneumoniamnist", "breastmnist", "chestmnist", 'covid', 'kvasir',
-                            'aptos', "retina", "chestxray"
-                        ], type=str)
-    parser.add_argument('--data_root', help='Data directory',
-                        default='../data', type=str)
+                        choices=['cifar10', 'cifar100', "pneumoniamnist", "breastmnist", "chestmnist", 'imagenet', 'covid', 'kvasir', 'aptos', "breakhis", "retina", "chestxray"], type=str)
     parser.add_argument('--one_class_idx', help='None: multi-class, Not None: one-class',
                         default=None, type=int)
-    parser.add_argument('--model', help='Model',
-                        choices=['resnet18', 'resnet18_imagenet'], type=str)
+    parser.add_argument('--model', help='Model', type=str)
     parser.add_argument('--mode', help='Training mode',
                         default='simclr', type=str)
     parser.add_argument('--simclr_dim', help='Dimension of simclr layer',
@@ -33,11 +27,14 @@ def _parse_args(default=False):
 
     parser.add_argument('--shift_trans_type', help='shifting transformation type', default='none',
                         choices=[
-                            'rotation', 'cutperm', 'none', 'blurgaussian', 'blurmedian', 'diffusion', 'diffusion_rotation',
-                            'diffusion_cutperm', 'blurgaussian_cutperm', 'blurmedian_cutperm'
+                            'rotation', 'cutperm', 'none', 'blurgaussian', 'blurmedian', 'blurnone', 'diffusion', 'diffusion_rotation',
+                            'diffusion_cutperm', 'blurgaussian_cutperm', 'blurmedian_cutperm', 'blurnone_cutperm'
                         ], type=str)
     parser.add_argument('--diffusion_model_path', default=None, type=str)
+    parser.add_argument('--loss_mode', default="shifted_removed", type=str)
+    parser.add_argument('--diffusion_scheduler', default='uniform', type=str)
     parser.add_argument('--diff_resolution', help='intermediate product resolution', default=32, type=int)
+    parser.add_argument('--contamination_ratio', help='Contaminate training data with anomalies.', default=0., type=float)
     parser.add_argument('--kernel_size', help='blur kernel size',
                         default=7, type=int)
     parser.add_argument("--resize_to_constant", help='resize_to_constant',
@@ -84,6 +81,8 @@ def _parse_args(default=False):
 
     ##### Objective Configurations #####
     parser.add_argument('--sim_lambda', help='Weight for SimCLR loss',
+                        default=1.0, type=float)
+    parser.add_argument('--simsiam_lambda', help='Weight for SimCLR loss',
                         default=1.0, type=float)
     parser.add_argument('--temperature', help='Temperature for similarity',
                         default=0.5, type=float)

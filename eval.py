@@ -5,6 +5,7 @@ from common.common import parse_args
 
 
 def main(P):
+
     model, test_loader, ood_test_loader, train_loader, simclr_aug = read_args(P)
 
     model.eval()
@@ -13,11 +14,13 @@ def main(P):
         from evals import test_classifier
         with torch.no_grad():
             error = test_classifier(P, model, test_loader, 0, logger=None)
+        return error
 
     elif P.mode == 'test_marginalized_acc':
         from evals import test_classifier
         with torch.no_grad():
             error = test_classifier(P, model, test_loader, 0, marginal=True, logger=None)
+        return error
 
     elif P.mode in ['ood', 'ood_pre']:
         if P.mode == 'ood':
@@ -50,8 +53,9 @@ def main(P):
                 print(message)
             bests.append(best_auroc)
 
-        bests = map('{:.4f}'.format, bests)
-        print('\t'.join(bests))
+        _bests = map('{:.4f}'.format, bests)
+        print('\t'.join(_bests))
+        return (auroc_dict, bests)
 
     else:
         raise NotImplementedError()

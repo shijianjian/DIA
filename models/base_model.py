@@ -46,3 +46,38 @@ class BaseModel(nn.Module, metaclass=ABCMeta):
             return output, _aux
 
         return output
+
+
+class BaseModelSimSiam(BaseModel):
+
+    def forward(self, inputs, penultimate=False, simclr=False, shift=False, joint=False, projector=False, predictor=False):
+
+        output = super().forward(
+            inputs, penultimate=penultimate, simclr=False, shift=shift, joint=joint)
+
+        if isinstance(output, (tuple,)):
+            output, _aux = output
+            _return_aux = True
+        else:
+            _return_aux = False
+            _aux = {}
+        
+        if simclr:
+            projector = True
+
+        if projector:
+            _return_aux = True
+            _aux["projector"] = self.projector(_aux["penultimate"])
+
+        if predictor:
+            _return_aux = True
+            _aux["predictor"] = self.predictor(_aux["projector"])
+
+        if simclr:
+            _return_aux = True
+            _aux['simclr'] = self.simclr_layer(_aux["projector"])
+
+        if _return_aux:
+            return output, _aux
+
+        return output

@@ -4,10 +4,13 @@ from utils.utils import save_checkpoint
 from utils.utils import save_linear_checkpoint
 
 from common.train import *
-from evals import eval_ood_detection
-from training.unsup import setup
+from evals import test_classifier, eval_ood_detection
+from eval import main as eval_ood_main
 
-
+if 'sup' in P.mode:
+    from training.sup import setup
+else:
+    from training.unsup import setup
 train, fname = setup(P.mode, P)
 
 logger = Logger(fname, ask=not resume, local_rank=P.local_rank)
@@ -20,9 +23,9 @@ else:
     linear = model.linear
 linear_optim = torch.optim.Adam(linear.parameters(), lr=1e-3, betas=(.9, .999), weight_decay=P.weight_decay)
 
-best_auc_baseline = 0
-best_auc_baseline_margin = 0
-
+mets = ["baseline", "clean_norm", "similar"]
+best_met = {met: 0 for met in mets}
+best_met.update({"CSI": 0})
 # Run experiments
 for epoch in range(start_epoch, P.epochs + 1):
     logger.log_dirname(f"Epoch {epoch}")
@@ -39,10 +42,9 @@ for epoch in range(start_epoch, P.epochs + 1):
     train(P, epoch, model, criterion, optimizer, scheduler_warmup, train_loader, logger=logger, num_batches_per_epoch=200, **kwargs)
 
     model.eval()
-
     if epoch % P.save_step == 0 and P.local_rank == 0:
         ood = eval_ood_detection(
-            P, model, test_loader, ood_test_loader, ["baseline", "baseline_marginalized"],
+            P, model, test_loader, ood_test_loader, mets,
             train_loader=train_loader, simclr_aug=simclr_aug
         )
         logger.log(ood)
@@ -50,35 +52,49 @@ for epoch in range(start_epoch, P.epochs + 1):
             save_states = model.module.state_dict()
         else:
             save_states = model.state_dict()
-        if ood["one_class_1"]["baseline"] > best_auc_baseline:
-            logger.log("Saving best baseline AUC checkpoint")
-            best_auc_baseline = ood["one_class_1"]["baseline"]
-            save_checkpoint(epoch, save_states, optimizer.state_dict(), logger.logdir, name="best_baseline")
-            save_linear_checkpoint(linear_optim.state_dict(), logger.logdir, name="best_baseline")
-        if ood["one_class_1"]["baseline_marginalized"] > best_auc_baseline_margin:
-            logger.log("Saving best baseline_marginalized AUC checkpoint")
-            best_auc_baseline_margin = ood["one_class_1"]["baseline_marginalized"]
-            save_checkpoint(epoch, save_states, optimizer.state_dict(), logger.logdir, name="best_baseline_marginalized")
-            save_linear_checkpoint(linear_optim.state_dict(), logger.logdir, name="best_baseline_marginalized")
+
         save_checkpoint(epoch, save_states, optimizer.state_dict(), logger.logdir)
         save_linear_checkpoint(linear_optim.state_dict(), logger.logdir)
-        logger.log('[Epoch %3d] [Best baseline %5.4f] [Best baseline marginalized %5.4f]' % (epoch, best_auc_baseline, best_auc_baseline_margin))
-        from eval import main as eval_ood_main
+
         _P_prev = deepcopy(P)
-        if P.shift_trans_type in ["diffusion_rotation", "blurgaussian", "blurmedian", "rotation"]:
+        if P.shift_trans_type in ["diffusion_rotation", "blurgaussian", "blurmedian", "blurnone", "rotation"]:
             P.shift_trans_type = "rotation"
-        elif P.shift_trans_type in ["diffusion_cutperm", "blurgaussian_cutperm", "blurmedian_cutperm", "cutperm"]:
+        elif P.shift_trans_type in ["diffusion_cutperm", "blurgaussian_cutperm", "blurmedian_cutperm", "blurnone_cutperm", "cutperm"]:
             P.shift_trans_type = "cutperm"
         else:
             raise ValueError
         P.load_path = os.path.join(logger.logdir, "last.model")
         P.print_score = True
         P.mode = "ood_pre"
-        P.print_score = True
         P.ood_score = ["CSI"]
         P.ood_samples = 10
         P.resize_factor = 0.54
-        P.resize_fix = True
+        P.resize_fix = False
         P.ood_layer = ["simclr", "shift"]
-        eval_ood_main(P)
+        auc_dict, bests = eval_ood_main(P)
         P = _P_prev
+
+        for met_name in mets + ["CSI"]:
+            if met_name == "CSI":
+                met_val = sum([auc_dict[k][met_name] for k in auc_dict.keys()]) / len(auc_dict.keys())
+            else:
+                met_val = sum([ood[k][met_name] for k in ood.keys()]) / len(ood.keys())
+
+            if met_val > best_met[met_name]:
+                logger.log(f"Saving best {met_name} AUC checkpoint")
+                best_met[met_name] = met_val
+                save_checkpoint(epoch, save_states, optimizer.state_dict(), logger.logdir, name=f"best_{met_name}")
+                save_linear_checkpoint(linear_optim.state_dict(), logger.logdir, name=f"best_{met_name}")
+
+        logging_str = ('[Epoch %3d] ' % epoch) + " ".join([f"[Best {met} {best_met[met]:5.4f}]" for met in mets + ["CSI"]])
+        logger.log(logging_str)
+
+    if epoch % P.error_step == 0 and ('sup' in P.mode):
+        error = test_classifier(P, model, test_loader, epoch, logger=logger)
+
+        is_best = (best > error)
+        if is_best:
+            best = error
+
+        logger.scalar_summary('eval/best_error', best, epoch)
+        logger.log('[Epoch %3d] [Test %5.2f] [Best %5.2f]' % (epoch, error, best))

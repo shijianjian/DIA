@@ -385,6 +385,7 @@ def train(dataset, cls_names, output_dir, args):
 
     augment_horizontal_flip = True
     _factor = 2  # scale the batch size for large GPU memories
+    _factor = 16  # scale the batch size for large GPU memories
     train_batch_size = 16 * _factor
 
     transform = [transforms.ToTensor()]
@@ -397,13 +398,15 @@ def train(dataset, cls_names, output_dir, args):
         ds,
         batch_size=train_batch_size,
         shuffle=False,
-        pin_memory=True,
-        num_workers=24,
+        pin_memory=False,
+        num_workers=12,
         sampler=get_subset_sampler(ds, class_names=cls_names),
         collate_fn=remove_labels_collate_fn,
     )
 
     diffusion = get_model(image_size, args.dilation, args.local_randn)
+    if args.state_dict_path is not None:
+        diffusion.load_state_dict(torch.load(args.state_dict_path)["model"])
     _seed_all(0)
     os.makedirs(output_dir, exist_ok=True)
     trainer = Trainer(
@@ -411,8 +414,8 @@ def train(dataset, cls_names, output_dir, args):
         data_loader=dl,
         train_batch_size=train_batch_size,
         train_lr=8e-5,
-        train_num_steps=5000 * 10 // _factor,
-        save_and_sample_every=5000 // _factor,
+        train_num_steps=500000 * 10 // _factor,
+        save_and_sample_every=500000 // _factor,
         gradient_accumulate_every=2,  # gradient accumulation steps
         ema_decay=0.995,  # exponential moving average decay
         amp=False,  # NOTE: MUST turn off mixed precision, otherwise it won't converge
@@ -466,13 +469,14 @@ def get_dataset_config(dataset, image_size=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["train", "eval"])
-    parser.add_argument("--dataset", choices=["pneumonia", "breast", "chest", "chestxray", "cifar10", "cifar100", "sars-covid", "kvasir", "breakhis", "catsdogs", "retina", "aptos"])
+    parser.add_argument("--dataset", choices=["pneumonia", "breast", "chest", "chestxray", "cifar10", "cifar100", "sars-covid", "kvasir", "breakhis", "catsdogs", "retina", "aptos", "imagenet"])
     parser.add_argument("--on_label", type=int, default=None)
     parser.add_argument("--image_size", type=int, default=None)
     parser.add_argument("--dilation", action="store_true", help="if to use dilation in unet.")
     parser.add_argument("--local_randn", action="store_true", help="if to use local randn in diffusion net.")
     parser.add_argument("--steps", type=int, default=100, help="evaluation arguments.")
     parser.add_argument("--seed", type=int, default=None, help="random seed")
+    parser.add_argument("--state_dict_path", type=str, default=None, help="state dict")
     parser.add_argument("--ratio", type=float, default=1.)
     args = parser.parse_args()
 
@@ -485,13 +489,15 @@ if __name__ == "__main__":
     if args.ratio != 1:
         output_dir = output_dir + f"_r{args.ratio}"
 
-    if args.mode == "train" and (args.dataset == "cifar10" or args.dataset == "cifar100" or args.dataset == "catsdogs"):
+    if args.mode == "train" and (args.dataset == "cifar10" or args.dataset == "cifar100" or args.dataset == "catsdogs" or args.dataset == "imagenet"):
         if args.on_label is None and args.dataset == "cifar10":
             on_label = list(range(10))
         elif args.on_label is None and args.dataset == "cifar100":
             on_label = list(range(20))
         elif args.on_label is None and args.dataset == "catsdogs":
             on_label = list(range(2))
+        elif args.on_label is None and args.dataset == "imagenet":
+            on_label = list(range(1000))
         else:
             on_label = [args.on_label]
         train(name, on_label, output_dir + f"_{args.on_label}", args)
