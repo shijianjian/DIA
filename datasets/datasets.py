@@ -223,16 +223,36 @@ def get_superclass_list(dataset):
         raise NotImplementedError()
 
 
-def get_subclass_dataset(dataset, classes):
+def get_subclass_dataset(dataset, classes, contaminate_mode="random", contamination_ratio=0., seed=12345):
+    """
+    Args:
+        contaminate_mode: "random".
+            "random" => random sampling from all other classes.
+        contamination_ratio: 0.0 ~ 1.0. contamination_ratio = x / (x + n)
+    """
     if not isinstance(classes, list):
         classes = [classes]
 
     indices = []
+    full_contamination_indices = []
     for idx, tgt in enumerate(dataset.targets):
         if tgt in classes:
             indices.append(idx)
+        else:
+            full_contamination_indices.append(idx)
 
-    dataset = Subset(dataset, indices)
+    contamination_indices = []
+    if contamination_ratio != 0:
+        x = len(indices)
+        n = int(contamination_ratio * x / (1 - contamination_ratio))
+
+        if contaminate_mode == "random":
+            rs = np.random.RandomState(seed)
+            contamination_indices = rs.choice(full_contamination_indices, n, replace=False)
+        else:
+            raise NotImplementedError
+
+    dataset = Subset(dataset, list(indices) + list(contamination_indices))
     return dataset
 
 
