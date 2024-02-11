@@ -17,6 +17,7 @@ def _parse_args(default=False):
 
     parser.add_argument('--dataset', help='Dataset',
                         choices=['cifar10', 'cifar100', "pneumoniamnist", "breastmnist", "chestmnist", 'imagenet', 'covid', 'kvasir', 'aptos', "breakhis", "retina", "chestxray"], type=str)
+    parser.add_argument('--data_root', help='Data directory', default='../data', type=str)
     parser.add_argument('--one_class_idx', help='None: multi-class, Not None: one-class',
                         default=None, type=int)
     parser.add_argument('--model', help='Model', type=str)

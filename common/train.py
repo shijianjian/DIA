@@ -1,4 +1,5 @@
 from copy import deepcopy
+import os
 
 import torch
 import torch.nn as nn
@@ -49,10 +50,14 @@ if P.one_class_idx is not None:
     P.n_superclasses = len(cls_list)
 
     full_test_set = deepcopy(test_set)  # test set of full classes
-    train_set = get_subclass_dataset(train_set, classes=cls_list[P.one_class_idx])
+    full_train_set = deepcopy(train_set)  # test set of full classes
+    train_set = get_subclass_dataset(
+        train_set, classes=cls_list[P.one_class_idx],
+        contaminate_mode="random", contamination_ratio=P.contamination_ratio, seed=12345
+    )
     test_set = get_subclass_dataset(test_set, classes=cls_list[P.one_class_idx])
 
-kwargs = {'pin_memory': False, 'num_workers': 4}
+kwargs = {'pin_memory': False, 'num_workers': os.cpu_count()}
 
 if P.multi_gpu:
     train_sampler = DistributedSampler(train_set, num_replicas=P.n_gpus, rank=P.local_rank)
