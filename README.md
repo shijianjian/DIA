@@ -1,42 +1,35 @@
 # Dissolving Is Amplifying: Towards Fine-Grained Anomaly Detection
 
-Official PyTorch implementation of
-["**Dissolving Is Amplifying: Towards Fine-Grained Anomaly Detection**"](
-https://arxiv.org/pdf/2302.14696)
+
+<div align="center">
+Jian Shi<sup>1</sup> · Pengyi Zhang<sup>2</sup> · Ni Zhang<sup>2</sup> · Hakim Ghazzai<sup>1</sup> ·  Peter Wonka<sup>1</sup>
+
+
+<sup>1</sup>King Abdullah University of Science and Technology                                                                
+<sup>2</sup>NEC Laboratories China
+    
+<a href="https://arxiv.org/abs/2302.14696"><img src='https://img.shields.io/badge/arXiv-Dissolving Is Amplifying-red' alt='Paper PDF'></a>
+<a href='https://shijianjian.github.io/DIA/'><img src='https://img.shields.io/badge/Project_Page-Dissolving Is Amplifying-green' alt='Project Page'></a>
+</div>
+
+
 
 <p align="center">
-    <img src=figures/dissolving.PNG width="900"> 
-    <em>Demonstration of the diffusion feature dissolving outcome. Input images are converged to domain-specific generalized patterns by dissolving instance features whilst going through the diffusion feature dissolving process.</em>
+    <img src=https://shijianjian.github.io/DIA/static/images/main-graph.png width="900"> 
 </p>
 
 
-## Abstract
+DIA is a fine-grained anomaly detection framework for medical images. We describe two novel components.
 
-Medical anomalous data normally contains fine-grained
-instance-wise additive feature patterns (e.g. tumor, hemorrhage), that are oftenly critical but insignificant. Interestingly, apart from the remarkable image generation abilities of diffusion models, we observed that diffusion models can well-dissolve image details for a given image, resulting in generalized feature representations. We hereby propose DIA, dissolving is amplifying, that amplifies finegrained image features by contrasting an image against its feature dissolved counterpart. In particular, we show that diffusion models can serve as semantic preserving feature dissolvers that help learning fine-grained anomalous patterns for anomaly detection tasks, especially for medical domains with fine-grained feature differences. As a result, our method yields a novel fine-grained anomaly detection method, aims at amplifying instance-level feature patterns, that significantly improves medical anomaly detection accuracy in a large margin without any prior knowledge of explicit fine-grained anomalous feature patterns.
+- First, the dissolving transformations. Our main observation is that generative diffusion models are feature-aware and applying them to medical images in a certain manner can remove or diminish fine-grained discriminative features such as tumors or hemorrhaging. More visual demonstration about the dissolving effects are [here](https://shijianjian.github.io/DIA/).
+- Second, an amplifying framework. It is based on contrastive learning to learn a semantically meaningful representation of medical images in a self-supervised manner.
 
-<p align="center">
-    <img src=figures/mainfig.PNG width="900"> 
-</p>
-
+The amplifying framework contrasts additional pairs of images with and without dissolving transformations applied and thereby boosts the learning of fine-grained feature representations. DIA significantly improves the medical anomaly detection performance with around 18.40\% AUC boost against the baseline method and achieves an overall SOTA against other benchmark methods.
 ## 1. Requirements
 ### Environments
-The experiment environment setting is:
-- apex==0.9.10.dev0
-- denoising_diffusion_pytorch==0.27.12
-- diffdist==0.1
-- kornia==0.6.8
-- matplotlib==3.6.0
-- medmnist==2.1.0
-- numpy==1.24.2
-- opencv_python==4.6.0.66
-- Pillow==9.4.0
-- scikit_learn==1.2.2
-- tensorboardX==2.6
-- thop==0.1.1.post2209072238
-- torch==1.11.0
-- torchlars==0.1.2
-- torchvision==0.12.0
+```
+$ pip install -r requirements.txt
+```
 
 ### Datasets 
 We majorly use the following datasets to benchmark our method:
@@ -63,9 +56,9 @@ To train unlabeled one-class & multi-class models in the paper, run this command
 python train.py --data_root ../data --dataset <DATASET> --model resnet18_imagenet --mode simclr_DIA --shift_trans_type diffusion_rotation --diff_resolution 32 --batch_size 32 --one_class_idx 0 --save_step 1  --diffusion_model_path <DIFFUSION_MODEL_PATH>
 ```
 
-- Other transformation types are avaliable to use, e.g. `diffusion_rotation`, `diffusion_cutperm`, `blurgaussian_rotation`, `blurgaussian_cutperm`, `blurmedian_rotation`, `blurmedian_cutperm`.
-- To test different resolutions, do remember to re-train the diffusion models for the corresponding resotution.
-- For low resolution datasets, e.g. CIFAR10, use `resnet18` instead of `resnet18_imagenet`.
+- Other transformation types are available to use, e.g. `diffusion_rotation`, `diffusion_cutperm`, `blurgaussian_rotation`, `blurgaussian_cutperm`, `blurmedian_rotation`, `blurmedian_cutperm`. Note that cutperm may perform better if your dataset is more *rotation-invariant*, while the rotation may perform better if the dataset is more "permutation-invariant".
+- To test different resolutions, do remember to re-train the diffusion models for the corresponding resolution.
+- For low resolution datasets, e.g. CIFAR10, use `--model resnet18` instead of `--model resnet18_imagenet`.
 
 ## 3. Evaluation
 
@@ -77,7 +70,7 @@ python eval.py --mode ood_pre --dataset <DATASET> --model resnet18_imagenet --oo
 
 ## 4. Results
 
-In general, our method achieves SOTA in terms of the fine-grained anomaly detection tasks. We recommend using 32x32 diffusion_rotation for most tasks, as the following results:
+In general, our method achieves SOTA in terms of fine-grained anomaly detection tasks. We recommend using 32x32 diffusion_rotation for most tasks, as the following results:
 
 ### Different transformations
 
@@ -98,7 +91,7 @@ In general, `diffusion_rotation` performs best.
 
 ### Resolutions
 
-Higher feature dissolving resolution will dramtically increase the processing time, while hardly bring up the detection performances.
+Higher feature dissolving resolution will dramatically increase the processing time, while hardly bringing up the detection performances.
 
 
 | Dataset       | resolution   |   MACs (G)   |     AUC      |
@@ -120,7 +113,7 @@ Higher feature dissolving resolution will dramtically increase the processing ti
 ## Citation
 ```
 @misc{2302.14696,
-  Author = {Jian Shi and Pengyi Zhang and Ni Zhang and Hakim Ghazzai and Yehia Massoud},
+  Author = {Jian Shi and Pengyi Zhang and Ni Zhang and Hakim Ghazzai and Peter Wonka},
   Title = {Dissolving Is Amplifying: Towards Fine-Grained Anomaly Detection},
   Year = {2023},
   Eprint = {arXiv:2302.14696},
@@ -128,4 +121,4 @@ Higher feature dissolving resolution will dramtically increase the processing ti
 ```
 
 ## Acknowledgement
-Our method is heavily modified from [CSI](https://github.com/alinlab/CSI).
+Our method is based on [CSI](https://github.com/alinlab/CSI).
