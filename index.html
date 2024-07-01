@@ -151,7 +151,7 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            In this paper, we introduce <i>DIA</i>, dissolving is amplifying. DIA is a fine-grained anomaly detection framework for medical images. We describe two novel components in the paper. 
+            Medical imaging often contains critical fine-grained features, such as tumors or hemorrhages, crucial for diagnosis yet potentially too subtle for detection with conventional methods. In this paper, we introduce <i>DIA</i>, dissolving is amplifying. DIA is a fine-grained anomaly detection framework for medical images. We describe two novel components in the paper. 
             First, we introduce <i>dissolving transformations</i>. Our main observation is that generative diffusion models are feature-aware and applying them to medical images in a certain manner can remove or diminish fine-grained discriminative features such as tumors or hemorrhaging.
             Second, we introduce an <i>amplifying framework</i> based on contrastive learning to learn a semantically meaningful representation of medical images in a self-supervised manner. The amplifying framework contrasts additional pairs of images with and without dissolving transformations applied and thereby boosts the learning of fine-grained feature representations.
             DIA significantly improves the medical anomaly detection performance with around 18.40% AUC boost against the baseline method and achieves an overall SOTA against other benchmark methods.
