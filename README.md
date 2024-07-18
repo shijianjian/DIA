@@ -1,4 +1,4 @@
-# Dissolving Is Amplifying: Towards Fine-Grained Anomaly Detection
+# Dissolving Is Amplifying: Towards Fine-Grained Anomaly Detection [ECCV2024]
 
 
 <div align="center">
