@@ -25,6 +25,13 @@ DIA is a fine-grained anomaly detection framework for medical images. We describ
 - Second, an amplifying framework. It is based on contrastive learning to learn a semantically meaningful representation of medical images in a self-supervised manner.
 
 The amplifying framework contrasts additional pairs of images with and without dissolving transformations applied and thereby boosts the learning of fine-grained feature representations. DIA significantly improves the medical anomaly detection performance with around 18.40\% AUC boost against the baseline method and achieves an overall SOTA against other benchmark methods.
+
+---
+**News**
+- [July 2024] We are integrating to [Kornia](https://github.com/kornia/kornia)! You may access StableDiffusion-based dissolving transformations with `kornia.filters.StableDiffusionDissolving` or use it as an augmentation `kornia.augmentation.RandomDissolving`. Kornia welcomes contributors for their AI-based light-weight operations! 
+- [July 2024] Our paper is accepted to ECCV2024!
+---
+
 ## 1. Requirements
 ### Environments
 ```
