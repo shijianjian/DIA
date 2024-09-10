@@ -10,6 +10,7 @@ Jian Shi<sup>1</sup> · Pengyi Zhang<sup>2</sup> · Ni Zhang<sup>2</sup> · Haki
     
 <a href="https://arxiv.org/abs/2302.14696"><img src='https://img.shields.io/badge/arXiv-Dissolving Is Amplifying-red' alt='Paper PDF'></a>
 <a href='https://shijianjian.github.io/DIA/'><img src='https://img.shields.io/badge/Project_Page-Dissolving Is Amplifying-green' alt='Project Page'></a>
+<a href='https://huggingface.co/spaces/shijianjian/Dissolving-Transformation'><img src='https://img.shields.io/badge/huggingface-spaces' alt='space'></a>
 </div>
 
 
@@ -28,6 +29,7 @@ The amplifying framework contrasts additional pairs of images with and without d
 
 ---
 **News**
+- [Sept. 2024] We released a [huggingface space](https://huggingface.co/spaces/shijianjian/Dissolving-Transformation) for you to play with dissolving transformations. 
 - [July 2024] We are integrating to [Kornia](https://github.com/kornia/kornia)! You may access StableDiffusion-based dissolving transformations with `kornia.filters.StableDiffusionDissolving` or use it as an augmentation `kornia.augmentation.RandomDissolving`. Kornia welcomes contributors for their AI-based light-weight operations! 
 - [July 2024] Our paper is accepted to ECCV2024!
 ---
